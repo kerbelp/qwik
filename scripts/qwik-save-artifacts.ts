@@ -10,6 +10,8 @@ const root = join(__dirname, '..');
 const srcRepoRef = 'https://github.com/BuilderIO/qwik/commit/';
 
 (async () => {
+  console.log(`QWIK_API_TOKEN_GITHUB Token Available: ${!!(token && token.length > 0)}`);
+
   const finishQwik = await prepare({
     buildRepo: 'qwik-build',
     artifactsDir: join(root, 'packages', 'qwik', 'dist'),
@@ -31,9 +33,10 @@ async function prepare({ buildRepo, artifactsDir }: { buildRepo: string; artifac
   console.log(
     'preparing to save artifacts to ' + artifactsDir + ' into BuilderIO/' + buildRepo + ' repo.'
   );
+
   const buildRepoDir = join(root, 'dist-dev', buildRepo);
   const repo = token
-    ? `https://${token}:x-oauth-basic@github.com/BuilderIO/${buildRepo}.git`
+    ? `https://${token}@github.com/BuilderIO/${buildRepo}.git`
     : `git@github.com:BuilderIO/${buildRepo}.git`;
 
   await $('rm', '-rf', buildRepoDir);
