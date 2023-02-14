@@ -17,11 +17,11 @@ import {
   RequestEventInternal,
   setRequestAction,
 } from './request-event';
-import { QACTION_KEY } from '../../runtime/src/constants';
+import { QACTION_KEY, QFN_KEY } from '../../runtime/src/constants';
 import { isFormContentType, isQDataJson, QDATA_JSON } from './user-response';
 import { HttpStatus } from './http-status-codes';
 import type { Render, RenderToStringResult } from '@builder.io/qwik/server';
-import { RenderOptions, _serializeData } from '@builder.io/qwik';
+import { QRL, RenderOptions, _deserializeData, _serializeData } from '@builder.io/qwik';
 import { getQwikCityServerData } from './response-page';
 import { RedirectMessage } from './redirect-handler';
 
@@ -40,6 +40,9 @@ export const resolveRequestHandlers = (
 
   if (route) {
     if (isPageRoute) {
+      if (method === 'POST') {
+        requestHandlers.push(pureServerFunction);
+      }
       requestHandlers.push(fixTrailingSlash);
       requestHandlers.push(renderQData);
     }
@@ -223,6 +226,27 @@ const formToObj = (formData: FormData): Record<string, any> => {
   });
   return obj;
 };
+
+async function pureServerFunction(ev: RequestEvent) {
+  const fn = ev.query.get(QFN_KEY);
+  if (fn) {
+    ev.exit();
+    const serverFunctionsMap = (globalThis as any)._qwikFunctionsMap as Map<
+      string,
+      QRL<(...args: any[]) => any>
+    >;
+    if (serverFunctionsMap) {
+      const qrl = serverFunctionsMap.get(fn);
+      if (qrl) {
+        const data = _deserializeData(await ev.request.text());
+        const result = await qrl(...data);
+        ev.headers.set('Content-Type', 'application/json, charset=utf-8');
+        ev.send(200, await _serializeData(result));
+      }
+    }
+    return;
+  }
+}
 
 function fixTrailingSlash(ev: RequestEvent) {
   const trailingSlash = getRequestTrailingSlash(ev);
