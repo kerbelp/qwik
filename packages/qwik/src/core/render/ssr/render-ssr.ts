@@ -423,7 +423,6 @@ const renderSSRComponent = (
             attributes[eventName] = serializeQRLs(listener[1], placeholderCtx);
             addQwikEvent(eventName, rCtx.$static$.$containerState$);
           }
-          `<script type='placeholder' hidden></script>;`;
           renderNodeElementSync('script', attributes, stream);
           logWarn(`Component has listeners attached, but it does not render any elements, injecting a new <script> element to attach listeners.
           This is likely to the usage of useBrowserVisibleTask$() in a component that renders no elements.`);
